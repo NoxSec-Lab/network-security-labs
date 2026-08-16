@@ -112,3 +112,16 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Management Subnet Route:** Added static route entry for `192.168.10.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
   * **Application Subnet Route:** Added static route entry for `192.168.20.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
   * **Routing Table Symmetry:** Ensured the edge firewall possesses explicit path knowledge for internal VLANs, enabling stateful return flow processing for outbound subnets.
+
+## Stateful Firewall & Traffic Isolation
+
+### VyOS Stateful Firewall & SSH Access Policy
+
+![VyOS Firewall ACL Rule Configuration](assets/11-vyos-firewall-acl-config.png)
+
+* **Objective:** Construct a stateful IPv4 firewall ruleset (`MGMT_TO_APP`) on the core VyOS router to restrict inter-VLAN access, permitting only explicit SSH administrative sessions from Management to Application subnets.
+* **Key Implementation Details:**
+  * **Default Security Stance:** Established an explicit `default-action drop` policy on the `MGMT_TO_APP` ruleset to enforce zero-trust traffic boundaries.
+  * **Stateful Inspection (Rule 10):** Configured rule to permit existing `established` and `related` connection flows, allowing bidirectional data transfer for approved sessions.
+  * **Explicit Management SSH Access (Rule 20):** Allowed inbound TCP port 22 (SSH) traffic strictly originating from the Management subnet (`192.168.10.0/24`).
+  * **Forward Filter Binding (Rule 100):** Applied the custom ruleset as a forward filter jump-target for egress traffic directed out interface `eth2.20` toward the Application VLAN.
