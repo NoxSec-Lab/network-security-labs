@@ -59,3 +59,16 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Static IP Provisioning:** Configured `192.168.20.10/24` on interface `ens3` to bind the server to the Application VLAN segment.
   * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
   * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.20.1`).
+
+## Inter-VLAN Connectivity & Path MTU Validation
+
+### Management Server Reachability & PMTUD Test
+
+![Management Server Ping & PMTUD Validation](assets/06-ubuntu-mgmt-ping-pmtud.png)
+
+* **Objective:** Verify end-to-end ICMP reachability from the Management server (`192.168.10.10`) to the core router backbone and Application host, and validate Path MTU Discovery (PMTUD) behavior across constrained links.
+* **Key Implementation Details:**
+  * **Core Backbone Reachability:** Successfully pinged the VyOS transit interface (`10.0.0.2`) with **0% packet loss**.
+  * **Inter-VLAN Reachability:** Verified routing to the Application Server (`192.168.20.10`) across subnets with **0% packet loss** (TTL=63 indicating a single L3 router hop).
+  * **PMTUD Boundary Enforcement:** Executed a DF (Don't Fragment) ping with 1472 payload bytes (`1500` total packet size). The kernel rejected the packet locally (`message too long, mtu=1400`) due to the target path constraint.
+  * **MTU Size Validation:** Re-sent ICMP probe with a 1372 payload byte payload (`1400` total packet size), confirming successful transmission without fragmentation.
