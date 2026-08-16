@@ -102,3 +102,13 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 * **Key Implementation Details:**
   * **Core-to-Edge Transit Test:** Transmitted ICMP probes from VyOS (`10.0.0.2`) to the pfSense LAN interface (`10.0.0.1`).
   * **Link Performance:** Confirmed active bidirectional connectivity with **0% packet loss** across 3 transmitted packets (`TTL=64` indicating direct local-segment adjacency).
+
+### Downstream Static Route Propagation on pfSense
+
+![pfSense Static Route Configuration](assets/10-pfsense-static-routes.png)
+
+* **Objective:** Provision downstream static routes on the pfSense firewall to direct return traffic for internal subnets back through the VyOS core router.
+* **Key Implementation Details:**
+  * **Management Subnet Route:** Added static route entry for `192.168.10.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
+  * **Application Subnet Route:** Added static route entry for `192.168.20.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
+  * **Routing Table Symmetry:** Ensured the edge firewall possesses explicit path knowledge for internal VLANs, enabling stateful return flow processing for outbound subnets.
