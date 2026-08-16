@@ -64,7 +64,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 
 ### Management Server Reachability & PMTUD Test
 
-![Management Server Ping & PMTUD Validation](assets/06-ubuntu-mgmt-ping-pmtud.png)
+![Management Server Ping & PMTUD Validation](assets/06-icmp-path-mtu-test.png)
 
 * **Objective:** Verify end-to-end ICMP reachability from the Management server (`192.168.10.10`) to the core router backbone and Application host, and validate Path MTU Discovery (PMTUD) behavior across constrained links.
 * **Key Implementation Details:**
