@@ -75,7 +75,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 
 ### Application Server Reachability Validation
 
-![Application Server Ping Tests](assets/07-ubuntu-app-ping-tests.png)
+![Application Server Ping Tests](assets/07-ubuntu-app-routing-validation.png)
 
 * **Objective:** Validate outbound layer 3 reachability from the Application server (`192.168.20.10`) to the VyOS core router transit interface and cross-subnet to the Management server.
 * **Key Implementation Details:**
