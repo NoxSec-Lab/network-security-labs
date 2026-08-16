@@ -93,3 +93,12 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Perimeter Gateway Configuration:** Provisioned the LAN interface (`em1`) with static IP `10.0.0.1/24` to act as the primary next-hop gateway for core router transit.
   * **WAN Interface Provisioning:** Confirmed the WAN interface (`em0`) obtained upstream DHCP lease `192.168.42.140/24` for outbound internet reachability.
   * **Web Management Access:** Established HTTPS webConfigurator management access via `https://10.0.0.1/` over the internal transit network.
+
+### Transit Link Connectivity Verification
+
+![VyOS to pfSense Transit Ping Validation](assets/09-vyos-pfsense-transit-ping.png)
+
+* **Objective:** Validate point-to-point layer 3 reachability across the transit link connecting the VyOS core router to the pfSense edge firewall gateway.
+* **Key Implementation Details:**
+  * **Core-to-Edge Transit Test:** Transmitted ICMP probes from VyOS (`10.0.0.2`) to the pfSense LAN interface (`10.0.0.1`).
+  * **Link Performance:** Confirmed active bidirectional connectivity with **0% packet loss** across 3 transmitted packets (`TTL=64` indicating direct local-segment adjacency).
