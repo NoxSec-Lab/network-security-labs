@@ -72,3 +72,12 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Inter-VLAN Reachability:** Verified routing to the Application Server (`192.168.20.10`) across subnets with **0% packet loss** (TTL=63 indicating a single L3 router hop).
   * **PMTUD Boundary Enforcement:** Executed a DF (Don't Fragment) ping with 1472 payload bytes (`1500` total packet size). The kernel rejected the packet locally (`message too long, mtu=1400`) due to the target path constraint.
   * **MTU Size Validation:** Re-sent ICMP probe with a 1372 payload byte payload (`1400` total packet size), confirming successful transmission without fragmentation.
+
+### Application Server Reachability Validation
+
+![Application Server Ping Tests](assets/07-ubuntu-app-ping-tests.png)
+
+* **Objective:** Validate outbound layer 3 reachability from the Application server (`192.168.20.10`) to the VyOS core router transit interface and cross-subnet to the Management server.
+* **Key Implementation Details:**
+  * **Transit Backbone Verification:** Successfully reached the VyOS transit interface (`10.0.0.2`) with **0% packet loss** and sub-millisecond average latency.
+  * **Reverse Inter-VLAN Verification:** Confirmed bi-directional routing by pinging the Management Server (`192.168.10.10`) with **0% packet loss** (`TTL=63` confirming standard single-hop core routing traversal).
