@@ -14,7 +14,6 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Isolated Internal Subnets:**
     * **Management Zone (VLAN 10):** Dedicated network segment (`192.168.10.0/24`) for administrative operations.
     * **Application Zone (VLAN 20):** Isolated network segment (`192.168.20.0/24`) for application workloads, configured with a constrained **1400 MTU** to analyze Path MTU Discovery (PMTUD) behavior.
----
 
 ## Core Routing & Gateway Configuration
 
