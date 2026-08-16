@@ -3,6 +3,8 @@
 ## Overview
 This lab implements an enterprise edge network architecture utilizing a **pfSense Edge Firewall**, a **VyOS Core Router**, and dual isolated **Ubuntu Linux subnets**. The project focuses on core networking fundamentals including inter-VLAN routing, Path MTU Discovery (PMTUD) troubleshooting, static route propagation, and protocol header analysis.
 
+---
+
 ## Network Architecture & Topology
 
 ![Lab Topology](assets/01-gns3-topology.png)
@@ -15,6 +17,8 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
     * **Management Zone (VLAN 10):** Dedicated network segment (`192.168.10.0/24`) for administrative operations.
     * **Application Zone (VLAN 20):** Isolated network segment (`192.168.20.0/24`) for application workloads, configured with a constrained **1400 MTU** to analyze Path MTU Discovery (PMTUD) behavior.
 
+---
+
 ## Core Routing & Gateway Configuration
 
 ![VyOS Interface & Static Route Configuration](assets/02-vyos-cli-config.png)
@@ -26,7 +30,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Application Gateway & MTU Tuning:** Provisioned `192.168.20.1/24` on `eth2` and clamped the interface to **MTU 1400** to enable downstream Path MTU Discovery (PMTUD) analysis.
   * **Default Outbound Route:** Configured static default route (`0.0.0.0/0`) directing all external traffic to next-hop gateway `10.0.0.1` (pfSense LAN interface).
 
-#### Core Interface Verification & VLAN Binding
+### Core Interface Verification & VLAN Binding
 
 ![VyOS Interface Status Verification](assets/03-vyos-interfaces-show.png)
 
@@ -38,7 +42,10 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
     * **`eth2.20`:** Subinterface bound to Application VLAN 20 (`192.168.20.1/24`) explicitly configured to **1400 MTU**.
   * **Transit Interface:** Confirmed `eth0` is operational with transit IP `10.0.0.2/24` and standard **1500 MTU**.
 
+---
+
 ## Host-Level Network Provisioning
+
 ### Management Server Network Addressing & Routing
 
 ![Management Server Configuration](assets/04-ubuntu-mgmt-network-config.png)
@@ -48,7 +55,6 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Static IP Provisioning:** Configured `192.168.10.10/24` on interface `ens3` to place the server in the Management VLAN segment.
   * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
   * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.10.1`).
- 
 
 ### Application Server IP & Routing Setup
 
@@ -60,6 +66,8 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
   * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.20.1`).
 
+---
+
 ## Inter-VLAN Connectivity & Path MTU Validation
 
 ### Management Server Reachability & PMTUD Test
@@ -69,7 +77,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 * **Objective:** Verify end-to-end ICMP reachability from the Management server (`192.168.10.10`) to the core router backbone and Application host, and validate Path MTU Discovery (PMTUD) behavior across constrained links.
 * **Key Implementation Details:**
   * **Core Backbone Reachability:** Successfully pinged the VyOS transit interface (`10.0.0.2`) with **0% packet loss**.
-  * **Inter-VLAN Reachability:** Verified routing to the Application Server (`192.168.20.10`) across subnets with **0% packet loss** (TTL=63 indicating a single L3 router hop).
+  * **Inter-VLAN Reachability:** Verified routing to the Application Server (`192.168.20.10`) across subnets with **0% packet loss** (`TTL=63` indicating a single L3 router hop).
   * **PMTUD Boundary Enforcement:** Executed a DF (Don't Fragment) ping with 1472 payload bytes (`1500` total packet size). The kernel rejected the packet locally (`message too long, mtu=1400`) due to the target path constraint.
   * **MTU Size Validation:** Re-sent ICMP probe with a 1372 payload byte payload (`1400` total packet size), confirming successful transmission without fragmentation.
 
@@ -81,6 +89,8 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 * **Key Implementation Details:**
   * **Transit Backbone Verification:** Successfully reached the VyOS transit interface (`10.0.0.2`) with **0% packet loss** and sub-millisecond average latency.
   * **Reverse Inter-VLAN Verification:** Confirmed bi-directional routing by pinging the Management Server (`192.168.10.10`) with **0% packet loss** (`TTL=63` confirming standard single-hop core routing traversal).
+
+---
 
 ## Perimeter Firewall & Edge Gateway Setup
 
@@ -112,6 +122,8 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Management Subnet Route:** Added static route entry for `192.168.10.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
   * **Application Subnet Route:** Added static route entry for `192.168.20.0/24` pointing to next-hop gateway `10.0.0.2` (VyOS `eth0`).
   * **Routing Table Symmetry:** Ensured the edge firewall possesses explicit path knowledge for internal VLANs, enabling stateful return flow processing for outbound subnets.
+
+---
 
 ## Stateful Firewall & Traffic Isolation
 
@@ -152,6 +164,8 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Ingress Packet Inspection:** Executed `tcpdump -i eth1 icmp -n` on VyOS, observing active `ICMP echo request` frames arriving from `192.168.10.10`.
   * **Filter Verification:** Confirmed packets ingress via `eth1` but are prevented from forwarding out egress interface `eth2` due to the applied ACL policy.
 
+---
+
 ## Deep-Dive Protocol & MTU Header Analysis
 
 ### Layer 3 Data Link Framing & PMTUD Boundary Verification
@@ -180,3 +194,11 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **L2 Framing Overhead:** Observed total length of `1514` bytes on wire (14-byte Ethernet Header + 1500-byte IPv4 packet).
   * **IPv4 Header Inspection:** Verified IP Header Length of **20 bytes** (`Header Length: 20 bytes (5)`), Total Length of **1500 bytes**, and active **Don't Fragment (DF)** bit (`Flags: 0x2, Don't fragment`).
   * **ICMP Payload Breakdown:** Confirmed ICMP header of **8 bytes** (`Type 8 Echo Request`), demonstrating the exact header arithmetic: $1472 \text{ payload} + 8 \text{ ICMP} + 20 \text{ IP} = 1500 \text{ IP Total Length}$.
+
+---
+
+## Key Takeaways & Engineering Insights
+
+* **Symmetric Routing & Path Knowledge:** Explicit downstream routes on edge firewalls are essential in multi-tier topologies. Without back-routes to internal subnets (`192.168.10.0/24` and `192.168.20.0/24`), return traffic is dropped at the perimeter, causing asymmetric routing failures.
+* **Stateful Filtering Efficiency:** Implementing stateful tracking (`established`, `related`) significantly reduces ACL rule complexity. Bypassing state tracking would require manual reverse-path rules for every permitted outbound flow.
+* **PMTUD Overhead Mechanics:** Constrained MTU boundaries impact data transfer efficiency. Wire-level captures confirm that a 28-byte overhead (20-byte IP header + 8-byte ICMP header) must always be accounted for when tuning maximum transmission units to prevent fragmentation drops or ICMP "Destination Unreachable / Fragmentation Needed" signaling errors.
