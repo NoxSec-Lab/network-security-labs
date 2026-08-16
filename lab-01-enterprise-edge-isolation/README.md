@@ -135,3 +135,19 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Forward Filter Mapping:** Confirmed `forward filter rule 100` targets all outbound traffic on `eth2` and jumps to the `MGMT_TO_APP` inspection chain.
   * **Chain Integrity:** Verified `default-action drop` policy is active alongside stateful packet inspection (`established`, `related`) in `rule 10`.
   * **Access Scope:** Re-verified `rule 20` limits permitted connections exclusively to TCP port 22 originating from `192.168.10.0/24`.
+
+### Policy Enforcement & Packet Capture Analysis
+
+![Management Ping Failure Output](assets/13-ubuntu-mgmt-ping-failure.png)
+
+* **Objective:** Validate that non-permitted ICMP traffic originating from the Management VLAN is actively blocked from traversing to the Application VLAN by the VyOS forward filter.
+* **Key Implementation Details:**
+  * **Traffic Drop Verification:** Attempted ICMP echo requests from Management (`192.168.10.10`) to Application (`192.168.20.10`), resulting in **100% packet loss**.
+  * **Default Stance Enforcement:** Confirmed the `MGMT_TO_APP` policy's default-drop behavior successfully suppresses non-explicitly allowed protocols (ICMP/8).
+
+![VyOS Packet Capture Output](assets/14-vyos-tcpdump-icmp-capture.png)
+
+* **Objective:** Capture packet ingress on the core router to confirm that blocked ICMP traffic reaches the ingress interface before being dropped by forward filters.
+* **Key Implementation Details:**
+  * **Ingress Packet Inspection:** Executed `tcpdump -i eth1 icmp -n` on VyOS, observing active `ICMP echo request` frames arriving from `192.168.10.10`.
+  * **Filter Verification:** Confirmed packets ingress via `eth1` but are prevented from forwarding out egress interface `eth2` due to the applied ACL policy.
