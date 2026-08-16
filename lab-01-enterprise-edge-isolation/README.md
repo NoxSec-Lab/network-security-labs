@@ -125,3 +125,13 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Stateful Inspection (Rule 10):** Configured rule to permit existing `established` and `related` connection flows, allowing bidirectional data transfer for approved sessions.
   * **Explicit Management SSH Access (Rule 20):** Allowed inbound TCP port 22 (SSH) traffic strictly originating from the Management subnet (`192.168.10.0/24`).
   * **Forward Filter Binding (Rule 100):** Applied the custom ruleset as a forward filter jump-target for egress traffic directed out interface `eth2.20` toward the Application VLAN.
+
+### Firewall Configuration Verification
+
+![VyOS Firewall Policy Hierarchy Output](assets/12-vyos-firewall-show-output.png)
+
+* **Objective:** Validate the active VyOS IPv4 firewall configuration hierarchy, confirming forward filter attachment points and rule conditions prior to commit.
+* **Key Implementation Details:**
+  * **Forward Filter Mapping:** Confirmed `forward filter rule 100` targets all outbound traffic on `eth2` and jumps to the `MGMT_TO_APP` inspection chain.
+  * **Chain Integrity:** Verified `default-action drop` policy is active alongside stateful packet inspection (`established`, `related`) in `rule 10`.
+  * **Access Scope:** Re-verified `rule 20` limits permitted connections exclusively to TCP port 22 originating from `192.168.10.0/24`.
