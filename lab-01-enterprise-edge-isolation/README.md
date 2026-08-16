@@ -48,3 +48,14 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Static IP Provisioning:** Configured `192.168.10.10/24` on interface `ens3` to place the server in the Management VLAN segment.
   * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
   * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.10.1`).
+ 
+
+### Application Server IP & Routing Setup
+
+![Application Server Configuration](assets/05-ubuntu-app-network-config.png)
+
+* **Objective:** Assign static Layer 3 networking to the Application host (`ubuntu-app-svr02`) within VLAN 20 and establish default routing back to the VyOS core gateway.
+* **Key Implementation Details:**
+  * **Static IP Provisioning:** Configured `192.168.20.10/24` on interface `ens3` to bind the server to the Application VLAN segment.
+  * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
+  * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.20.1`).
