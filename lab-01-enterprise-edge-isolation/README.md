@@ -26,7 +26,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
   * **Application Gateway & MTU Tuning:** Provisioned `192.168.20.1/24` on `eth2` and clamped the interface to **MTU 1400** to enable downstream Path MTU Discovery (PMTUD) analysis.
   * **Default Outbound Route:** Configured static default route (`0.0.0.0/0`) directing all external traffic to next-hop gateway `10.0.0.1` (pfSense LAN interface).
 
-### Core Interface Verification & VLAN Binding
+#### Core Interface Verification & VLAN Binding
 
 ![VyOS Interface Status Verification](assets/03-vyos-interfaces-show.png)
 
