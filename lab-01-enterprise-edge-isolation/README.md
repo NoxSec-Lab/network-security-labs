@@ -151,3 +151,32 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 * **Key Implementation Details:**
   * **Ingress Packet Inspection:** Executed `tcpdump -i eth1 icmp -n` on VyOS, observing active `ICMP echo request` frames arriving from `192.168.10.10`.
   * **Filter Verification:** Confirmed packets ingress via `eth1` but are prevented from forwarding out egress interface `eth2` due to the applied ACL policy.
+
+## Deep-Dive Protocol & MTU Header Analysis
+
+### Layer 3 Data Link Framing & PMTUD Boundary Verification
+
+![Management CLI PMTUD Probing](assets/15-ubuntu-cli-pmtud-test.png)
+
+* **Objective:** Demonstrate precise Maximum Transmission Unit (MTU) boundaries on the Management interface (`1500` MTU) using Don't Fragment (DF) ICMP probes.
+* **Key Implementation Details:**
+  * **1400-Byte Frame Test:** Transmitted 1372-byte payload + 28-byte IP/ICMP headers (`1400` total bytes), receiving **0% packet loss**.
+  * **1500-Byte Frame Test:** Transmitted 1472-byte payload + 28-byte IP/ICMP headers (`1500` total bytes), matching max MTU capacity with **0% packet loss**.
+  * **Frame Exceed Boundary:** Attempted 1473-byte payload (`1501` total bytes with headers). The kernel dropped the frame locally (`message too long, mtu=1500`) to prevent unpermitted fragmentation.
+
+![Wireshark ICMP Frame Traversal List](assets/16-wireshark-icmp-frame-comparison.png)
+
+* **Objective:** Capture and analyze packet-length deltas at the wire level between standard 1400 MTU and 1500 MTU frame transfers.
+* **Key Implementation Details:**
+  * **Frame Length Breakdown:** Captured total Ethernet frame lengths including the 14-byte L2 header:
+    * **Frames 23-26:** 1372-byte payload = `1414` bytes total wire length.
+    * **Frames 35-38:** 1472-byte payload = `1514` bytes total wire length.
+  * **Bi-Directional Traversal:** Verified symmetric Echo Request/Reply pairing between `192.168.10.10` and gateway `192.168.10.1`.
+
+![Wireshark Protocol Header Field Inspection](assets/17-wireshark-mtu-header-inspection.png)
+
+* **Objective:** Inspect packet headers in Wireshark to verify IP flags, total length calculations, and encapsulation overhead.
+* **Key Implementation Details:**
+  * **L2 Framing Overhead:** Observed total length of `1514` bytes on wire (14-byte Ethernet Header + 1500-byte IPv4 packet).
+  * **IPv4 Header Inspection:** Verified IP Header Length of **20 bytes** (`Header Length: 20 bytes (5)`), Total Length of **1500 bytes**, and active **Don't Fragment (DF)** bit (`Flags: 0x2, Don't fragment`).
+  * **ICMP Payload Breakdown:** Confirmed ICMP header of **8 bytes** (`Type 8 Echo Request`), demonstrating the exact header arithmetic: $1472 \text{ payload} + 8 \text{ ICMP} + 20 \text{ IP} = 1500 \text{ IP Total Length}$.
