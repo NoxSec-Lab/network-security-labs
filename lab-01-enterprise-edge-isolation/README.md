@@ -117,7 +117,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 
 ### VyOS Stateful Firewall & SSH Access Policy
 
-![VyOS Firewall ACL Rule Configuration](assets/11-vyos-firewall-acl-config.png)
+![VyOS Firewall ACL Rule Configuration](assets/11-vyos-firewall-ACLs-config-cli.png)
 
 * **Objective:** Construct a stateful IPv4 firewall ruleset (`MGMT_TO_APP`) on the core VyOS router to restrict inter-VLAN access, permitting only explicit SSH administrative sessions from Management to Application subnets.
 * **Key Implementation Details:**
