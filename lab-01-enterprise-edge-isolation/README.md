@@ -37,3 +37,13 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
     * **`eth1.10`:** Subinterface bound to Management VLAN 10 (`192.168.10.1/24`) operating at standard **1500 MTU**.
     * **`eth2.20`:** Subinterface bound to Application VLAN 20 (`192.168.20.1/24`) explicitly configured to **1400 MTU**.
   * **Transit Interface:** Confirmed `eth0` is operational with transit IP `10.0.0.2/24` and standard **1500 MTU**.
+
+### Management Server Network Addressing & Routing
+
+![Management Server Configuration](assets/04-ubuntu-mgmt-network-config.png)
+
+* **Objective:** Assign static Layer 3 networking to the Management host (`ubuntu-mgmt-svr01`) within VLAN 10 and establish default routing back to the VyOS core gateway.
+* **Key Implementation Details:**
+  * **Static IP Provisioning:** Configured `192.168.10.10/24` on interface `ens3` to place the server in the Management VLAN segment.
+  * **Interface Activation:** Brought the network interface operational state to **Up** (`sudo ip link set ens3 up`).
+  * **Default Route Forwarding:** Directed all off-subnet traffic to the VyOS core router gateway interface (`192.168.10.1`).
