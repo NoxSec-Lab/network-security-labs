@@ -1,4 +1,8 @@
 # Lab 1: Enterprise Edge Isolation & Firewall Enforcement
 
-## Objective
-Simulate an enterprise network architecture using pfSense, VyOS, and Ubuntu Server endpoints to validate VLAN segmentation, Access Control List (ACL) enforcement, and Path MTU (PMTU) troubleshooting.
+## Overview
+This laboratory implements an enterprise edge network architecture utilizing a **pfSense Edge Firewall**, a **VyOS Core Router**, and dual isolated **Ubuntu Linux subnets**. The project focuses on core networking fundamentals including inter-VLAN routing, Path MTU Discovery (PMTUD) troubleshooting, static route propagation, and protocol header analysis.
+
+## Network Architecture & Topology
+
+![Lab Topology](assets/01-gns3-topology.png)
