@@ -81,3 +81,15 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
 * **Key Implementation Details:**
   * **Transit Backbone Verification:** Successfully reached the VyOS transit interface (`10.0.0.2`) with **0% packet loss** and sub-millisecond average latency.
   * **Reverse Inter-VLAN Verification:** Confirmed bi-directional routing by pinging the Management Server (`192.168.10.10`) with **0% packet loss** (`TTL=63` confirming standard single-hop core routing traversal).
+
+## Perimeter Firewall & Edge Gateway Setup
+
+### pfSense Interface Addressing & Management Console
+
+![pfSense Console LAN Configuration](assets/08-pfsense-console-lan-config.png)
+
+* **Objective:** Initialize the pfSense 2.7.2 perimeter firewall, binding interface roles to WAN/LAN networks and enabling management access.
+* **Key Implementation Details:**
+  * **Perimeter Gateway Configuration:** Provisioned the LAN interface (`em1`) with static IP `10.0.0.1/24` to act as the primary next-hop gateway for core router transit.
+  * **WAN Interface Provisioning:** Confirmed the WAN interface (`em0`) obtained upstream DHCP lease `192.168.42.140/24` for outbound internet reachability.
+  * **Web Management Access:** Established HTTPS webConfigurator management access via `https://10.0.0.1/` over the internal transit network.
