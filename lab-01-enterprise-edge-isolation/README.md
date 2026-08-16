@@ -38,6 +38,7 @@ This lab implements an enterprise edge network architecture utilizing a **pfSens
     * **`eth2.20`:** Subinterface bound to Application VLAN 20 (`192.168.20.1/24`) explicitly configured to **1400 MTU**.
   * **Transit Interface:** Confirmed `eth0` is operational with transit IP `10.0.0.2/24` and standard **1500 MTU**.
 
+## Host-Level Network Provisioning
 ### Management Server Network Addressing & Routing
 
 ![Management Server Configuration](assets/04-ubuntu-mgmt-network-config.png)
