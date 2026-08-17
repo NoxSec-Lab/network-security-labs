@@ -1,2 +1,2 @@
 # network-security-labs
-Enterprise network topology simulations, firewall rule enforcement (pfSense/VyOS), VLAN segmentation, and Linux troubleshooting labs.
+Enterprise network security labs virtualized in GNS3 — covering perimeter defense, firewall controls, traffic isolation, network troubleshooting, and beyond.
