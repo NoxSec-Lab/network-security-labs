@@ -93,6 +93,43 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 * **Objective:** Verify basic Layer 3 reachability across the dedicated transit link from pfSense (`10.0.1.1`) to the `DMZ-VyOS` router interface (`10.0.1.2`).
 * **Why We Verified It Here:**
   * **Validating the Physical & Logical Path:** Executing an ICMP echo request directly from the pfSense console menu before jumping into web management proves that interface assignment, IP binding, and physical layer links are fully operational.
+
+  
   * **Diagnostic Baseline:** Receiving a 0% packet loss response (`3 packets transmitted, 3 received`, avg ~9.6ms) gives us immediate confirmation that the underlying virtual switch fabric is functioning properly. This guarantees that any connection failures we encounter down the road stem from firewall policy definitions rather than basic routing or cable misconfigurations.
+
+---
+
+### Upstream Routing & Next-Hop Gateway Definitions (pfSense Web GUI)
+
+#### System Routing Table & Default Gateway Audit
+
+![pfSense System Gateways Overview](assets/07_pfSense_Gateways_Overview.png)
+
+* **Objective:** Review the initial edge gateway configuration under `System > Routing > Gateways` before declaring internal downstream routers.
+* **Why We Checked This First:**
+  * **Establishing Base Internet Egress:** Before pointing pfSense toward internal downstream networks, we need to verify that upstream internet connectivity is active. The interface shows `WAN_DHCP` pointing to `192.168.42.1` with active monitoring enabled.
+  * **Preventing Asymmetric Routing Loops:** Leaving the default gateway on `Automatic` ensures internet-bound traffic defaults to the upstream WAN interface, rather than accidentally trying to send public traffic back toward internal gateways we are about to add.
+
+---
+
+#### DMZ Transit Gateway Definition (`DMZ_GW`)
+
+![pfSense DMZ Gateway Configuration](assets/08_pfSense_Add_DMZ_Gateway.png)
+
+* **Objective:** Define `DMZ_GW` pointing to `10.0.1.2` on the `OPT1` interface as the designated next-hop for all DMZ-bound traffic.
+* **Why We Configured It This Way:**
+  * **Decoupling Interface IP from Route Target:** While pfSense sits on `10.0.1.1/24` on `OPT1`, it needs an explicit gateway object to forward packets toward the isolated DMZ network (`172.16.30.0/24`) sitting behind `DMZ-VyOS` (`10.0.1.2`).
+  * **Targeted Health Monitoring:** By default, pfSense uses the gateway IP (`10.0.1.2`) for RRD quality tracking and ICMP health checks. This gives us real-time visibility into transit link latency and packet loss right from the pfSense dashboard.
+
+---
+
+#### Core Router Gateway Definition (`CORE_VYOS_GW`)
+
+![pfSense Core VyOS Gateway Configuration](assets/09_pfSense_Core_VyOS_Gateway_Configuration.png)
+
+* **Objective:** Define `CORE_VYOS_GW` pointing to `10.0.0.2` on the `LAN` interface to handle downstream routing for internal enterprise subnets.
+* **Why We Configured It This Way:**
+  * **Bridging Edge to Core:** The core enterprise router (`10.0.0.2`) manages internal segments like Management (`192.168.10.0/24`). Defining this gateway gives pfSense an explicit next-hop address for returning traffic destined for internal users and infrastructure.
+  * **Architectural Layering:** Separating `CORE_VYOS_GW` (LAN interface) from `DMZ_GW` (OPT1 interface) forces pfSense to keep internal corporate traffic and untrusted DMZ traffic on completely independent physical/logical paths at the firewall boundary.
 
 ---
