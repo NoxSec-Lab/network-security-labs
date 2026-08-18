@@ -133,3 +133,13 @@ This lab expands our enterprise network architecture into a production-grade 3-t
   * **Architectural Layering:** Separating `CORE_VYOS_GW` (LAN interface) from `DMZ_GW` (OPT1 interface) forces pfSense to keep internal corporate traffic and untrusted DMZ traffic on completely independent physical/logical paths at the firewall boundary.
 
 ---
+#### Gateway Table Verification & Health Audit
+
+![pfSense Configured Gateways Overview](assets/10_pfSense_Gateways_List_Configured.png)
+
+* **Objective:** Validate that all internal and external next-hop gateways are active, correctly bound to their respective interfaces, and passing health checks.
+* **Why We Verified It Here:**
+  * **Status & Monitoring Confirmation:** Seeing the green checkmark icons next to `DMZ_GW` (`10.0.1.2` on `OPT1`) and `CORE_VYOS_GW` (`10.0.0.2` on `LAN`) confirms that pfSense is successfully probing both VyOS routers via ICMP.
+  * **Pre-requisite for Static Routes:** Gateways in pfSense act as targets for static routes. Confirming that both gateways are active and bound to the right interfaces here guarantees that our static routing table entries in the next step will actually activate rather than failover or drop packets.
+
+---
