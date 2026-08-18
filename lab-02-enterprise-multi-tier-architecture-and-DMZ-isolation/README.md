@@ -41,7 +41,7 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ### DMZ VyOS Interface & Static Gateway Configuration
 
-![DMZ-VyOS CLI Configuration](assets/02-dmz-vyos-cli-config.png)
+![DMZ-VyOS CLI Configuration](assets/02-dmz-vyos-base-config.png)
 
 * **Objective:** Provision the `DMZ-VyOS` router with Layer 3 interfaces for transit and host connectivity, establish default static routing to pfSense, and construct the `DMZ_ISOLATION` firewall policy.
 * **Key Implementation Details:**
