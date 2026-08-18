@@ -143,3 +143,49 @@ This lab expands our enterprise network architecture into a production-grade 3-t
   * **Pre-requisite for Static Routes:** Gateways in pfSense act as targets for static routes. Confirming that both gateways are active and bound to the right interfaces here guarantees that our static routing table entries in the next step will actually activate rather than failover or drop packets.
 
 ---
+
+## Downstream Routing & Egress NAT Configuration (pfSense Web GUI)
+
+### DMZ Subnet Static Route Injection
+
+![pfSense Static Route to DMZ Host Subnet](assets/11_pfSense_Static_Route_DMZ_Subnet.png)
+
+* **Objective:** Map a static route sending `172.16.30.0/24` traffic directly to `DMZ_GW` (`10.0.1.2`).
+* **Why We Configured It This Way:**
+  * **Resolving Non-Local Subnet Reachability:** pfSense only has direct interface visibility to `10.0.1.0/24`. Explicit static routing guarantees packets destined for `172.16.30.0/24` are handed directly to `DMZ-VyOS` rather than dropped or routed out to the WAN interface.
+  * **Delegated Policy Enforcement:** Forwarding the entire `/24` block to `DMZ-VyOS` delegates host-level filtering decisions to the dedicated boundary firewall.
+
+---
+
+### Internal Enterprise Subnet Static Routes
+
+![pfSense Static Route to Management Subnet](assets/12_pfSense_Static_Route_Management_Subnet.png)
+
+![pfSense Static Route to Application Subnet](assets/13_pfSense_Static_Route_Application_Subnet.png)
+
+* **Objective:** Create static routes for internal zones—Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`)—pointing to `CORE_VYOS_GW` (`10.0.0.2`).
+* **Why We Configured It This Way:**
+  * **Eliminating Asymmetric Paths:** Internal corporate endpoints reside behind `10.0.0.2`. Explicit static routes ensure return traffic from internet sessions or edge services travels back through `CORE_VYOS_GW` without path asymmetry.
+  * **Traffic Segmentation:** Isolating corporate routes from DMZ paths ensures enterprise internal traffic never leaks into the transit link reserved for DMZ workloads.
+
+---
+
+### Ingress Firewall Policy for DMZ Transit Interface
+
+![pfSense Ingress Pass Rule for OPT1 Interface](assets/14_pfSense_Firewall_Rule_OPT1_Pass.png)
+
+* **Objective:** Configure an ingress pass rule on interface `OPT1` permitting source traffic from `172.16.30.0/24` destined for `Any` target.
+* **Why We Configured It This Way:**
+  * **Overriding Default Ingress Block:** pfSense enforces a default-deny policy on optional interfaces (`OPT1`). Without an explicit pass rule, packets entering `OPT1` from `172.16.30.0/24` are silently dropped.
+  * **Edge Egress Facilitation:** Allowing `172.16.30.0/24` on `OPT1` enables DMZ traffic to reach the Outbound NAT engine and exit to public networks, while `DMZ-VyOS` retains responsibility for strict lateral control between internal segments.
+
+---
+
+### Advanced Outbound NAT for DMZ Egress
+
+![pfSense Outbound NAT Mapping for DMZ Subnet](assets/15_pfSense_Outbound_NAT_Rule.png)
+
+* **Objective:** Implement an Advanced Outbound NAT rule translating source addresses from `172.16.30.0/24` exiting `WAN` into the primary `WAN address`.
+* **Why We Configured It This Way:**
+  * **Handling RFC 1918 Address Translation:** Upstream ISPs drop unroutable private addresses (`172.16.30.0/24`). Port Address Translation (PAT) allows DMZ hosts to access internet resources (such as package repositories and patch servers) using the public WAN IP.
+  * **Topology Masking:** Masquerading internal IP structures prevents external entities from mapping internal DMZ addressing layouts during outbound connections.
