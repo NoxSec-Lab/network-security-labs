@@ -189,3 +189,30 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 * **Why We Configured It This Way:**
   * **Handling RFC 1918 Address Translation:** Upstream ISPs drop unroutable private addresses (`172.16.30.0/24`). Port Address Translation (PAT) allows DMZ hosts to access internet resources (such as package repositories and patch servers) using the public WAN IP.
   * **Topology Masking:** Masquerading internal IP structures prevents external entities from mapping internal DMZ addressing layouts during outbound connections.
+
+---
+
+## DMZ Server Provisioning & End-to-End Egress Verification
+
+### DMZ Server Network & Hostname Initialization
+
+![DMZ Server IP and Default Route Configuration](assets/16_DMZ_Server_IP_Route_Config.png)
+
+* **Objective:** Assign an explicit hostname (`DMZ-Public-Server`), assign a static IP address (`172.16.30.10/24`) to interface `ens3`, and establish a default route via gateway `172.16.30.1`.
+* **Why We Configured It This Way:**
+  * **Hostname Standardization:** Updating the hostname from generic `ubuntu-cloud` to `DMZ-Public-Server` ensures clear identification in system loggers, firewall state tables, and network monitoring dashboards.
+  * **Layer 3 Subnet Binding:** Binding static IP `172.16.30.10/24` directly to interface `ens3` places the server into the isolated DMZ host network segment governed by `DMZ-VyOS`.
+  * **Default Egress Delegation:** Setting `172.16.30.1` (`DMZ-VyOS` interface `eth1`) as the default gateway ensures all non-local outbound connections are forwarded directly to the DMZ boundary router for policy inspection.
+
+---
+
+### End-to-End DMZ Reachability & Egress Routing Audit
+
+![DMZ Server Step-by-Step ICMP Verification](assets/17_DMZ_Server_Ping_Test_Verification.png)
+
+* **Objective:** Execute sequential ICMP connectivity tests from `DMZ-Public-Server` across every hop in the network path—from local gateway to edge firewall to external public internet (`8.8.8.8`).
+* **Why We Verified It Here:**
+  * **Local Gateway Verification (`172.16.30.1`):** Achieved 0% packet loss (average RTT ~8.4 ms), confirming Layer 2 switch connectivity and functional Layer 3 interface binding on `DMZ-VyOS`.
+  * **Transit Router Gateway Verification (`10.0.1.2`):** Achieved 0% packet loss (average RTT ~9.1 ms), proving that `DMZ-VyOS` correctly routes packets internally across its interfaces (`eth1` to `eth0`).
+  * **Edge Firewall Verification (`10.0.1.1`):** Achieved 0% packet loss (average RTT ~30.4 ms with TTL drop to 63), confirming that the pfSense `OPT1` ingress rule successfully permits source traffic from `172.16.30.0/24`.
+  * **Public Internet Egress Verification (`8.8.8.8`):** Achieved 0% packet loss (average RTT ~36.8 ms), conclusively proving that pfSense’s Outbound NAT rule translates `172.16.30.10` to the WAN address and completes full-path external routing.
