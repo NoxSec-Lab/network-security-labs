@@ -1,24 +1,7 @@
-Lab 2: Enterprise Multi-Tier Architecture & DMZ Isolation
-Overview
-This lab expands our baseline enterprise architecture into a production-grade 3-tier network topology. By introducing a Demilitarized Zone (DMZ) alongside an Internal LAN and a dedicated Management VLAN, this project enforces strict ingress/egress filtering rules, isolates public-facing web services, and sets up a controlled target environment for multi-stage penetration testing and pivoting exercises.
-
-
-Core Security Objectives & ACL Matrix
-To enforce zero-trust isolation on the VyOS core router, we define four strict firewall traffic flows:
-DMZ Isolation Rule: Hosts in the DMZ (172.16.30.0/24) MUST NOT initiate any connection into the Internal LAN (192.168.20.0/24) or Management Zone (192.168.10.0/24).
-DMZ Service Access: Management and Internal LAN hosts can access HTTP/HTTPS (TCP 80/443) and SSH (TCP 22) on DMZ hosts.
-Stateful Ingress Processing: Return traffic from the DMZ is permitted only if the connection was initiated by internal hosts (established, related).
-Edge Gateway Routing: Downstream static routes on pfSense must be updated to route return traffic for 172.16.30.0/24 back to next-hop 10.0.0.2.
-
-----
-
-
-
-
 # Lab 2: Enterprise Multi-Tier Architecture & DMZ Isolation
 
 ## Overview
-This lab expands our enterprise network architecture into a production-grade 3-tier topology within GNS3, introducing a Demilitarized Zone (DMZ) alongside the internal LAN and Management subnets. By deploying a dedicated DMZ router (`DMZ-VyOS`) connected directly to the `Edge-pfSense-Firewall`, this project enforces strict perimeter isolation, configures stateful ingress/egress filtering rules, and establishes structured routing paths to securely host public-facing services while protecting internal workloads.
+This lab expands our enterprise network architecture into a production-grade 3-tier topology within GNS3. Building on Lab 1's foundation, we introduce an isolated Demilitarized Zone (DMZ) alongside our existing internal LAN and Management subnets. By deploying a dedicated boundary router (`DMZ-VyOS`) connected directly to our edge security firewall (`Edge-pfSense-Firewall`), this project establishes strict perimeter controls, stateful traffic rules, and clear routing paths to safely host public-facing services without exposing internal corporate networks.
 
 ---
 
@@ -26,28 +9,29 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![Lab Topology](assets/01-gns3-topology.png)
 
-* **Objective:** Design and validate a secure 3-tier enterprise architecture that completely isolates public-facing DMZ servers from internal administrative and application segments.
+* **Objective:** Design and validate a secure 3-tier enterprise network that isolates public web services from internal administrative and application systems.
 * **Architecture Breakdown:**
-  * **Edge Security Perimeter:** A pfSense firewall managing WAN access (Internet-NAT), internal transit (`10.0.0.1/24`), DMZ transit (`10.0.1.1/24`), and out-of-band management connectivity via a dedicated Windows Admin host (`192.168.100.0/24`).
-  * **Core Routing Layer:** A `Core-VyOS` router handling inter-VLAN routing for internal subnets (`192.168.10.0/24` Management and `192.168.20.0/24` Application).
-  * **DMZ Routing Layer:** A dedicated `DMZ-VyOS` router servicing the DMZ segment (`172.16.30.0/24`) and enforcing strict ingress/egress firewall boundary policies.
-  * **Isolated Workloads:**
+  * **Edge Security Perimeter:** A pfSense firewall managing WAN connectivity (Internet NAT), internal transit (`10.0.0.1/24`), DMZ transit (`10.0.1.1/24`), and out-of-band management via a dedicated Windows Admin host (`192.168.100.0/24`).
+  * **Core Routing Layer:** A `Core-VyOS` router managing inter-VLAN traffic between internal subnets (`192.168.10.0/24` Management and `192.168.20.0/24` Application).
+  * **DMZ Routing Layer:** A dedicated `DMZ-VyOS` router servicing the DMZ network (`172.16.30.0/24`) and enforcing strict boundary firewall rules.
+  * **Workload Endpoints:**
     * **Management Zone:** `ubuntu-mgmt-svr01` (`192.168.10.10/24`).
     * **Application Zone:** `ubuntu-app-svr02` (`192.168.20.10/24`).
     * **DMZ Public Host:** `DMZ-Public-Server` (`172.16.30.10/24`).
 
 ---
+
 ## DMZ Routing & Boundary Firewall Enforcement
 
 ### DMZ Router Interface & Gateway Provisioning
 
 ![DMZ Router Initial Configuration](assets/02-dmz-vyos-base-config.png)
 
-* **Objective:** Assign Layer 3 addressing across transit and local DMZ interfaces on `DMZ-VyOS` and configure default outbound routing toward the pfSense edge firewall.
+* **Objective:** Assign network addresses across transit and local DMZ interfaces on `DMZ-VyOS`, and set up default outbound routing toward the pfSense edge firewall.
 * **Key Implementation Details:**
-  * **Transit Interface (`eth0`):** Assigned IP `10.0.1.2/24` with description `TRANSIT-TO-PFSENSE-E3` to establish the upstream interconnection.
-  * **DMZ Host Interface (`eth1`):** Assigned IP `172.16.30.1/24` with description `DMZ-HOST-SEGMENT` to act as the default gateway for public-facing servers.
-  * **Default Gateway:** Applied static default route (`0.0.0.0/0`) pointing to next-hop `10.0.1.1` (pfSense DMZ interface `e3`).
+  * **Transit Interface (`eth0`):** Configured with IP `10.0.1.2/24` to establish the dedicated link back to pfSense.
+  * **DMZ Host Interface (`eth1`):** Configured with IP `172.16.30.1/24` to act as the default gateway for public-facing servers.
+  * **Default Outbound Route:** Set a static default route (`0.0.0.0/0`) pointing all outbound traffic to next-hop `10.0.1.1` (pfSense DMZ interface `e3`).
 
 ---
 
@@ -57,9 +41,9 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 * **Objective:** Verify operational link status (`u/u`), IP address bindings, and descriptions across all physical and logical interfaces on `DMZ-VyOS`.
 * **Key Implementation Details:**
-  * **Transit Link (`eth0`):** Confirmed active state (`u/u`) with `10.0.1.2/24` bound and standard **1500 MTU**.
-  * **DMZ Host Link (`eth1`):** Confirmed active state (`u/u`) with `172.16.30.1/24` bound and standard **1500 MTU**.
-  * **Inactive Interfaces:** Verified interfaces `eth2` through `eth9` remain unconfigured in link-down state (`u/D`).
+  * **Transit Link (`eth0`):** Confirmed active state (`u/u`) with `10.0.1.2/24` bound and standard 1500 MTU.
+  * **DMZ Host Link (`eth1`):** Confirmed active state (`u/u`) with `172.16.30.1/24` bound and standard 1500 MTU.
+  * **Unused Interfaces:** Confirmed that interfaces `eth2` through `eth9` remain unassigned and administratively down (`u/D`) to shrink the attack surface.
 
 ---
 
@@ -67,80 +51,82 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![DMZ Firewall Policy & Forward Filter Hierarchy](assets/04-dmz-firewall-ruleset.png)
 
-* **Objective:** Construct a stateful, zero-trust boundary firewall policy (`DMZ_ISOLATION`) on `DMZ-VyOS` to guarantee that compromised DMZ hosts cannot pivot into internal subnets, while allowing internal management access and outbound internet egress.
+* **Objective:** Construct a stateful firewall policy (`DMZ_ISOLATION`) on `DMZ-VyOS` to ensure a compromised DMZ server cannot pivot into internal subnets, while still allowing internal management access and outbound internet updates.
 * **Key Implementation Details & Rationale:**
-  * **Stateful Flow Preservation (Rule 10):** Permitted connection states `established` and `related`. This allows inbound management sessions (such as SSH from VLAN 10) to receive return packets without requiring dangerous, open back-door rules from the DMZ back toward internal networks.
-  * **Strict Internal Subnet Isolation (Rules 20 & 30):** Configured explicit `action drop` rules targeting destination subnets `192.168.10.0/24` (Management) and `192.168.20.0/24` (Application). Even if an attacker gains root-level remote code execution on the public DMZ server, any packet initiated toward internal enterprise networks is dropped immediately at the L3 boundary interface.
-  * **Default Action & Internet Egress Rationale:** Set `default-action accept` on the `DMZ_ISOLATION` chain. Because Rules 20 and 30 explicitly block internal destinations, all remaining unmatched traffic (e.g., outbound internet update traffic destined for `0.0.0.0/0`) is permitted to flow out through pfSense WAN NAT.
-  * **Forward Filter Mapping (`eth1` Ingress):** Configured `forward filter rule 10` to bind directly to `inbound-interface eth1` with `action jump` targeting `DMZ_ISOLATION`. Filtering packets at the exact point of ingress prevents unauthorized frames from ever reaching the VyOS routing engine or transit links.
- 
+  * **Stateful Flow Tracking (Rule 10):** Allowed `established` and `related` connection states. This lets return traffic flow back for sessions initiated by internal admins (like SSH management) without opening permanent backdoors from the DMZ back to internal networks.
+  * **Strict Internal Subnet Isolation (Rules 20 & 30):** Configured explicit `drop` rules targeting internal subnets `192.168.10.0/24` (Management) and `192.168.20.0/24` (Application). Even if an attacker gains control of the public web server, any connection attempt toward internal networks is dropped immediately at the boundary interface.
+  * **Default Pass for Internet Egress:** Applied `default-action accept` on the `DMZ_ISOLATION` chain. Because rules 20 and 30 explicitly block internal destinations, all remaining unmatched traffic (such as outbound web traffic for updates) can freely pass out through pfSense.
+  * **Forward Filter Mapping (`eth1` Ingress):** Bound `forward filter rule 10` to `inbound-interface eth1`, jumping directly to `DMZ_ISOLATION`. Inspecting traffic the moment it enters the router stops unauthorized packets before they ever reach the routing engine.
+
 ---
-### Edge Gateway & Transit Interface Setup (pfSense via TigerVNC Console)
+
+## Edge Gateway & Transit Interface Setup (pfSense Console)
+
+### Interface Mapping & Network Overview
 
 ![pfSense Interface Mapping & Network Overview](assets/05-pfsense-dmz-interface-config.png)
 
-* **Objective:** Establish physical-to-logical interface bindings on the pfSense firewall and assign static transit addressing to tie the upstream network segments together.
-* **Why We Configured It This Way:**
-  * **Interface Allocation Strategy:** Assigned `em0` to WAN (`192.168.42.140/24 via DHCP`) for upstream connectivity, `em1` to LAN (`10.0.0.1/24`), `em3` as **OPT1** (`10.0.1.1/24`) for the DMZ transit link, and `em2` as **OPT2** (`192.168.100.1/24`) for out-of-band management access.
-  * **Isolating Transit Traffic:** Mapping **OPT1 (`em3`)** to the `10.0.1.0/24` subnet creates a dedicated transit link between pfSense and the `DMZ-VyOS` boundary router. Keeping this transit pipe strictly separate from internal LAN traffic ensures all DMZ egress traffic can be cleanly routed and inspected without bleeding into internal client segments.
+* **Objective:** Map physical-to-logical interfaces on the pfSense firewall and assign static transit IP addresses to tie the multi-tier topology together.
+* **Key Implementation Details:**
+  * **Interface Allocation:** Bound `em0` to WAN (`192.168.42.140/24 via DHCP`), `em1` to LAN (`10.0.0.1/24`), `em3` as **OPT1** (`10.0.1.1/24`) for the DMZ transit link, and `em2` as **OPT2** (`192.168.100.1/24`) for out-of-band administrative access.
+  * **Transit Link Isolation:** Setting **OPT1 (`em3`)** as a dedicated `10.0.1.0/24` subnet keeps DMZ transit traffic completely separate from internal corporate LAN traffic at the hardware level.
 
 ---
 
-### End-to-End Transit Connectivity Verification
+### End-to-End Transit Link Verification
 
 ![ICMP Verification from pfSense to DMZ-VyOS](assets/06-pfsense-to-dmz-vyos-ping.png)
 
-* **Objective:** Verify basic Layer 3 reachability across the dedicated transit link from pfSense (`10.0.1.1`) to the `DMZ-VyOS` router interface (`10.0.1.2`).
-* **Why We Verified It Here:**
-  * **Validating the Physical & Logical Path:** Executing an ICMP echo request directly from the pfSense console menu before jumping into web management proves that interface assignment, IP binding, and physical layer links are fully operational.
-
-  
-  * **Diagnostic Baseline:** Receiving a 0% packet loss response (`3 packets transmitted, 3 received`, avg ~9.6ms) gives us immediate confirmation that the underlying virtual switch fabric is functioning properly. This guarantees that any connection failures we encounter down the road stem from firewall policy definitions rather than basic routing or cable misconfigurations.
+* **Objective:** Confirm basic Layer 3 reachability across the transit link connecting pfSense (`10.0.1.1`) to the `DMZ-VyOS` router (`10.0.1.2`).
+* **Key Implementation Details:**
+  * **Console Connectivity Test:** Transmitted ICMP echo requests directly from the pfSense menu before configuring web GUI rules to confirm cable and IP bindings were active.
+  * **Baseline Link Performance:** Confirmed active bidirectional reachability with **0% packet loss** (~9.6ms average latency), verifying that underlying switch connectivity was solid before testing firewall policies.
 
 ---
 
-### Upstream Routing & Next-Hop Gateway Definitions (pfSense Web GUI)
+## Upstream Routing & Gateway Definitions (pfSense Web GUI)
 
-#### System Routing Table & Default Gateway Audit
+### System Routing Table & Default Gateway Audit
 
 ![pfSense System Gateways Overview](assets/07_pfSense_Gateways_Overview.png)
 
-* **Objective:** Review the initial edge gateway configuration under `System > Routing > Gateways` before declaring internal downstream routers.
-* **Why We Checked This First:**
-  * **Establishing Base Internet Egress:** Before pointing pfSense toward internal downstream networks, we need to verify that upstream internet connectivity is active. The interface shows `WAN_DHCP` pointing to `192.168.42.1` with active monitoring enabled.
-  * **Preventing Asymmetric Routing Loops:** Leaving the default gateway on `Automatic` ensures internet-bound traffic defaults to the upstream WAN interface, rather than accidentally trying to send public traffic back toward internal gateways we are about to add.
+* **Objective:** Review the default edge routing configuration in pfSense before defining downstream routes for internal networks.
+* **Key Implementation Details:**
+  * **Verifying Base Internet Egress:** Confirmed `WAN_DHCP` (`192.168.42.1`) as the default system gateway with active health monitoring.
+  * **Preventing Routing Loops:** Kept default gateway handling on `Automatic` so internet-bound flows default to WAN, rather than accidentally looping back into internal routers.
 
 ---
 
-#### DMZ Transit Gateway Definition (`DMZ_GW`)
+### DMZ Transit Gateway Definition (`DMZ_GW`)
 
 ![pfSense DMZ Gateway Configuration](assets/08_pfSense_Add_DMZ_Gateway.png)
 
 * **Objective:** Define `DMZ_GW` pointing to `10.0.1.2` on the `OPT1` interface as the designated next-hop for all DMZ-bound traffic.
-* **Why We Configured It This Way:**
-  * **Decoupling Interface IP from Route Target:** While pfSense sits on `10.0.1.1/24` on `OPT1`, it needs an explicit gateway object to forward packets toward the isolated DMZ network (`172.16.30.0/24`) sitting behind `DMZ-VyOS` (`10.0.1.2`).
-  * **Targeted Health Monitoring:** By default, pfSense uses the gateway IP (`10.0.1.2`) for RRD quality tracking and ICMP health checks. This gives us real-time visibility into transit link latency and packet loss right from the pfSense dashboard.
+* **Key Implementation Details:**
+  * **Gateway Object Creation:** Created an explicit gateway entry for `10.0.1.2` on `OPT1` so pfSense knows where to forward packets heading for the `172.16.30.0/24` network behind `DMZ-VyOS`.
+  * **Link Monitoring:** Enabled health probes targeting `10.0.1.2` to track transit link latency and packet loss directly from the pfSense dashboard.
 
 ---
 
-#### Core Router Gateway Definition (`CORE_VYOS_GW`)
+### Core Router Gateway Definition (`CORE_VYOS_GW`)
 
 ![pfSense Core VyOS Gateway Configuration](assets/09_pfSense_Core_VyOS_Gateway_Configuration.png)
 
-* **Objective:** Define `CORE_VYOS_GW` pointing to `10.0.0.2` on the `LAN` interface to handle downstream routing for internal enterprise subnets.
-* **Why We Configured It This Way:**
-  * **Bridging Edge to Core:** The core enterprise router (`10.0.0.2`) manages internal segments like Management (`192.168.10.0/24`). Defining this gateway gives pfSense an explicit next-hop address for returning traffic destined for internal users and infrastructure.
-  * **Architectural Layering:** Separating `CORE_VYOS_GW` (LAN interface) from `DMZ_GW` (OPT1 interface) forces pfSense to keep internal corporate traffic and untrusted DMZ traffic on completely independent physical/logical paths at the firewall boundary.
+* **Objective:** Define `CORE_VYOS_GW` pointing to `10.0.0.2` on the `LAN` interface to handle downstream routing for internal subnets.
+* **Key Implementation Details:**
+  * **Connecting Edge to Core:** Created an explicit gateway for `10.0.0.2` so pfSense knows how to send return traffic back to internal segments like Management (`192.168.10.0/24`).
+  * **Path Separation:** Keeping `CORE_VYOS_GW` on the LAN interface and `DMZ_GW` on the OPT1 interface forces pfSense to maintain strict physical and logical isolation between internal and DMZ traffic paths.
 
 ---
-#### Gateway Table Verification & Health Audit
+
+### Gateway Table Verification & Health Audit
 
 ![pfSense Configured Gateways Overview](assets/10_pfSense_Gateways_List_Configured.png)
 
-* **Objective:** Validate that all internal and external next-hop gateways are active, correctly bound to their respective interfaces, and passing health checks.
-* **Why We Verified It Here:**
-  * **Status & Monitoring Confirmation:** Seeing the green checkmark icons next to `DMZ_GW` (`10.0.1.2` on `OPT1`) and `CORE_VYOS_GW` (`10.0.0.2` on `LAN`) confirms that pfSense is successfully probing both VyOS routers via ICMP.
-  * **Pre-requisite for Static Routes:** Gateways in pfSense act as targets for static routes. Confirming that both gateways are active and bound to the right interfaces here guarantees that our static routing table entries in the next step will actually activate rather than failover or drop packets.
+* **Objective:** Validate that all internal and external gateways are active, online, and passing continuous health checks.
+* **Key Implementation Details:**
+  * **Gateway Health Confirmation:** Confirmed green checkmark status for both `DMZ_GW` (`10.0.1.2`) and `CORE_VYOS_GW` (`10.0.0.2`), verifying active ICMP response.
+  * **Prerequisite for Static Routes:** Validated gateway health to ensure static routes dependent on these targets would activate cleanly without dropping packets.
 
 ---
 
@@ -150,10 +136,10 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![pfSense Static Route to DMZ Host Subnet](assets/11_pfSense_Static_Route_DMZ_Subnet.png)
 
-* **Objective:** Map a static route sending `172.16.30.0/24` traffic directly to `DMZ_GW` (`10.0.1.2`).
-* **Why We Configured It This Way:**
-  * **Resolving Non-Local Subnet Reachability:** pfSense only has direct interface visibility to `10.0.1.0/24`. Explicit static routing guarantees packets destined for `172.16.30.0/24` are handed directly to `DMZ-VyOS` rather than dropped or routed out to the WAN interface.
-  * **Delegated Policy Enforcement:** Forwarding the entire `/24` block to `DMZ-VyOS` delegates host-level filtering decisions to the dedicated boundary firewall.
+* **Objective:** Map a static route directing `172.16.30.0/24` traffic to `DMZ_GW` (`10.0.1.2`).
+* **Key Implementation Details:**
+  * **Resolving Downstream Reachability:** Added a static route for `172.16.30.0/24` via `10.0.1.2`, teaching pfSense how to reach the non-locally connected DMZ host network.
+  * **Delegating Security Enforcement:** Forwarding this entire subnet to `DMZ-VyOS` delegates local host filtering to the boundary router.
 
 ---
 
@@ -163,10 +149,10 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![pfSense Static Route to Application Subnet](assets/13_pfSense_Static_Route_Application_Subnet.png)
 
-* **Objective:** Create static routes for internal zones—Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`)—pointing to `CORE_VYOS_GW` (`10.0.0.2`).
-* **Why We Configured It This Way:**
-  * **Eliminating Asymmetric Paths:** Internal corporate endpoints reside behind `10.0.0.2`. Explicit static routes ensure return traffic from internet sessions or edge services travels back through `CORE_VYOS_GW` without path asymmetry.
-  * **Traffic Segmentation:** Isolating corporate routes from DMZ paths ensures enterprise internal traffic never leaks into the transit link reserved for DMZ workloads.
+* **Objective:** Map static routes for internal zones—Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`)—pointing to `CORE_VYOS_GW` (`10.0.0.2`).
+* **Key Implementation Details:**
+  * **Symmetric Return Paths:** Added static routes directing internal corporate traffic back through `10.0.0.2`, eliminating asymmetric routing issues for internet-bound traffic.
+  * **Traffic Isolation:** Ensured internal corporate routes remain cleanly separated from DMZ transit paths.
 
 ---
 
@@ -174,10 +160,10 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![pfSense Ingress Pass Rule for OPT1 Interface](assets/14_pfSense_Firewall_Rule_OPT1_Pass.png)
 
-* **Objective:** Configure an ingress pass rule on interface `OPT1` permitting source traffic from `172.16.30.0/24` destined for `Any` target.
-* **Why We Configured It This Way:**
-  * **Overriding Default Ingress Block:** pfSense enforces a default-deny policy on optional interfaces (`OPT1`). Without an explicit pass rule, packets entering `OPT1` from `172.16.30.0/24` are silently dropped.
-  * **Edge Egress Facilitation:** Allowing `172.16.30.0/24` on `OPT1` enables DMZ traffic to reach the Outbound NAT engine and exit to public networks, while `DMZ-VyOS` retains responsibility for strict lateral control between internal segments.
+* **Objective:** Create an ingress pass rule on interface `OPT1` allowing traffic originating from `172.16.30.0/24` to pass through pfSense.
+* **Key Implementation Details:**
+  * **Overriding Default Block:** Overrode pfSense's default "deny-all" rule on optional interfaces (`OPT1`) by explicitly permitting source network `172.16.30.0/24`.
+  * **Enabling Internet Egress:** Permitted DMZ traffic to reach the edge NAT engine, allowing web servers to download packages and system updates.
 
 ---
 
@@ -185,10 +171,10 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![pfSense Outbound NAT Mapping for DMZ Subnet](assets/15_pfSense_Outbound_NAT_Rule.png)
 
-* **Objective:** Implement an Advanced Outbound NAT rule translating source addresses from `172.16.30.0/24` exiting `WAN` into the primary `WAN address`.
-* **Why We Configured It This Way:**
-  * **Handling RFC 1918 Address Translation:** Upstream ISPs drop unroutable private addresses (`172.16.30.0/24`). Port Address Translation (PAT) allows DMZ hosts to access internet resources (such as package repositories and patch servers) using the public WAN IP.
-  * **Topology Masking:** Masquerading internal IP structures prevents external entities from mapping internal DMZ addressing layouts during outbound connections.
+* **Objective:** Configure an Outbound NAT rule translating private source IPs from `172.16.30.0/24` to the pfSense `WAN address` when exiting to the internet.
+* **Key Implementation Details:**
+  * **RFC 1918 Translation:** Applied Port Address Translation (PAT) so private DMZ IPs (`172.16.30.0/24`) can communicate on the public internet.
+  * **Internal Topology Hiding:** Masked internal DMZ network addressing behind the edge WAN interface.
 
 ---
 
@@ -198,37 +184,37 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![DMZ Server IP and Default Route Configuration](assets/16_DMZ_Server_IP_Route_Config.png)
 
-* **Objective:** Assign an explicit hostname (`DMZ-Public-Server`), assign a static IP address (`172.16.30.10/24`) to interface `ens3`, and establish a default route via gateway `172.16.30.1`.
-* **Why We Configured It This Way:**
-  * **Hostname Standardization:** Updating the hostname from generic `ubuntu-cloud` to `DMZ-Public-Server` ensures clear identification in system loggers, firewall state tables, and network monitoring dashboards.
-  * **Layer 3 Subnet Binding:** Binding static IP `172.16.30.10/24` directly to interface `ens3` places the server into the isolated DMZ host network segment governed by `DMZ-VyOS`.
-  * **Default Egress Delegation:** Setting `172.16.30.1` (`DMZ-VyOS` interface `eth1`) as the default gateway ensures all non-local outbound connections are forwarded directly to the DMZ boundary router for policy inspection.
+* **Objective:** Set up `DMZ-Public-Server` with static IP addressing (`172.16.30.10/24`) and direct default traffic to gateway `172.16.30.1`.
+* **Key Implementation Details:**
+  * **Hostname Standardization:** Updated hostname from `ubuntu-cloud` to `DMZ-Public-Server` for clean logging and identification across the network.
+  * **Static Network Binding:** Assigned `172.16.30.10/24` to interface `ens3` to place the server into the isolated DMZ segment.
+  * **Default Route Definition:** Directed default egress (`0.0.0.0/0`) to `172.16.30.1` (`DMZ-VyOS` `eth1`), making the boundary router responsible for inspecting all outbound traffic.
 
 ---
 
-### End-to-End DMZ Reachability & Egress Routing Audit
+### End-to-End DMZ Reachability & Egress Audit
 
 ![DMZ Server Step-by-Step ICMP Verification](assets/17_DMZ_Server_Ping_Test_Verification.png)
 
-* **Objective:** Execute sequential ICMP connectivity tests from `DMZ-Public-Server` across every hop in the network path—from local gateway to edge firewall to external public internet (`8.8.8.8`).
-* **Why We Verified It Here:**
-  * **Local Gateway Verification (`172.16.30.1`):** Achieved 0% packet loss (average RTT ~8.4 ms), confirming Layer 2 switch connectivity and functional Layer 3 interface binding on `DMZ-VyOS`.
-  * **Transit Router Gateway Verification (`10.0.1.2`):** Achieved 0% packet loss (average RTT ~9.1 ms), proving that `DMZ-VyOS` correctly routes packets internally across its interfaces (`eth1` to `eth0`).
-  * **Edge Firewall Verification (`10.0.1.1`):** Achieved 0% packet loss (average RTT ~30.4 ms with TTL drop to 63), confirming that the pfSense `OPT1` ingress rule successfully permits source traffic from `172.16.30.0/24`.
-  * **Public Internet Egress Verification (`8.8.8.8`):** Achieved 0% packet loss (average RTT ~36.8 ms), conclusively proving that pfSense’s Outbound NAT rule translates `172.16.30.10` to the WAN address and completes full-path external routing.
+* **Objective:** Test end-to-end connectivity step-by-step from `DMZ-Public-Server` out to the public internet (`8.8.8.8`).
+* **Key Implementation Details:**
+  * **Local Gateway Check (`172.16.30.1`):** Reached local gateway with **0% packet loss** (~8.4ms RTT), confirming local switch and link health.
+  * **Transit Router Check (`10.0.1.2`):** Reached `DMZ-VyOS` transit interface with **0% packet loss** (~9.1ms RTT), confirming internal router forwarding across interfaces.
+  * **Edge Firewall Check (`10.0.1.1`):** Reached pfSense `OPT1` interface with **0% packet loss** (~30.4ms RTT), confirming pfSense's ingress pass rule was working.
+  * **Public Internet Check (`8.8.8.8`):** Reached Google DNS with **0% packet loss** (~36.8ms RTT), proving Outbound NAT and internet routing were fully operational.
 
 ---
 
 ## Security Policy Enforcement & Isolation Verification
 
-### DMZ Outbound Isolation Enforcement (Ping Timeout Tests)
+### DMZ Outbound Isolation Enforcement (Ping Tests)
 
 ![DMZ Server Outbound Ping Timeout to Internal Subnets](assets/18_DMZ_Server_Isolation_Ping_Timeout.png)
 
-* **Objective:** Test policy enforcement on `DMZ-Public-Server` by initiating ICMP echo requests toward internal enterprise networks: Management (`192.168.10.1`) and Application (`192.168.20.1`).
-* **Why We Verified It Here:**
-  * **Zero-Trust Boundary Validation:** Both ping attempts resulted in `100% packet loss` (`3 packets transmitted, 0 received`). This confirms that DMZ hosts cannot initiate lateral movement into internal corporate zones.
-  * **Validating Drop Actions:** This test proves that rules 20 and 30 on the `DMZ_ISOLATION` firewall chain are actively evaluating traffic coming in on `eth1` and dropping packets directed toward private enterprise subnets.
+* **Objective:** Validate that the DMZ server cannot reach internal subnets by attempting pings toward Management (`192.168.10.1`) and Application (`192.168.20.1`) gateways.
+* **Key Implementation Details:**
+  * **Zero-Trust Block Verification:** Both ping tests resulted in **100% packet loss**, confirming that DMZ hosts cannot initiate connections into internal corporate segments.
+  * **Rule Enforcement Validation:** Verified that rules 20 and 30 on `DMZ-VyOS` actively drop unauthorized traffic at the DMZ boundary.
 
 ---
 
@@ -236,18 +222,27 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![VyOS Interface Packet Capture Dropped Packets](assets/19_DMZ_VyOS_tcpdump_Dropped_Packets.png)
 
-* **Objective:** Execute `sudo tcpdump -i eth1 icmp -n -v` on `DMZ-VyOS` to monitor real-time ICMP traffic arriving from the DMZ server.
-* **Why We Verified It Here:**
-  * **Ingress Ingestion Evidence:** The packet capture shows `172.16.30.10` sending ICMP echo requests targeting `192.168.10.1` and `192.168.20.1` on `eth1`.
-  * **Policy Enforcement Proof:** While `tcpdump` captures the packets arriving at `eth1`, no corresponding egress echo requests or reply packets exit toward the internal networks or pfSense. This confirms that the firewall engine intercepts and silently drops these frames before L3 forwarding occurs.
+* **Objective:** Capture live packets using `tcpdump` on `DMZ-VyOS` interface `eth1` to confirm that unauthorized traffic is dropped by firewall rules.
+* **Key Implementation Details:**
+  * **Ingress Packet Tracking:** Captured ICMP echo requests arriving from `172.16.30.10` targeting `192.168.10.1` and `192.168.20.1`.
+  * **Firewall Drop Confirmation:** Confirmed that while packets arrived on `eth1`, zero packets were forwarded out toward internal networks or pfSense, proving the firewall silently dropped the unauthorized flows.
 
 ---
 
-### Inbound Management Access & Port Audit (`nc` / SSH)
+### Inbound Management Access & Service Audit (`nc` / SSH)
 
 ![Management Server Inbound Service Access Test](assets/20_Inbound_Service_Access_Test.png)
 
-* **Objective:** Initiate ICMP reachability and TCP port checks (`nc -zv`) from an internal management host (`ubuntu-mgmt-svr01`) targeting `DMZ-Public-Server` (`172.16.30.10`) on port 22 (SSH).
-* **Why We Verified It Here:**
-  * **Stateful Flow Inspection Validation:** `ping` succeeds with 0% packet loss, and `nc -zv 172.16.30.10 22` returns `Connection to 172.16.30.10 22 port [tcp/ssh] succeeded!`.
-  * **Stateful Firewall Symmetry:** This validates rule 10 (`state established, related`) on the DMZ firewall policy. Inbound management sessions initiated from trusted internal networks are allowed in, and the server's return traffic is permitted out without exposing internal networks to uninitiated DMZ traffic.
+* **Objective:** Verify that an internal management server (`ubuntu-mgmt-svr01`) can initiate connections to the DMZ server over SSH (port 22).
+* **Key Implementation Details:**
+  * **Administrative Ping Check:** Confirmed ICMP reachability from `192.168.10.10` to `172.16.30.10` with **0% packet loss**.
+  * **SSH Service Audit:** Executed `nc -zv 172.16.30.10 22`, receiving `Connection to 172.16.30.10 22 port [tcp/ssh] succeeded!`.
+  * **Stateful Symmetry Validation:** Confirmed that rule 10 (`state established, related`) allows authorized internal admins to connect in, while return traffic passes back out without opening the internal network to DMZ-initiated threats.
+
+---
+
+## Key Takeaways & Engineering Insights
+
+* **Multi-Tier Isolation Strategy:** Placing public services in a dedicated DMZ behind a separate boundary router (`DMZ-VyOS`) establishes a hard security boundary. Even if a public web application is fully compromised, strict inbound filtering prevents attackers from pivoting into internal management or corporate zones.
+* **Stateful Flow Dynamics:** Using stateful inspection (`established`, `related`) simplifies security management. Internal hosts can administer DMZ services without requiring wide-open return rules that could compromise internal security.
+* **Edge Routing & NAT Alignment:** Routing traffic across a multi-tier network requires coordinated static routes and NAT rules on edge firewalls like pfSense. Without precise static routes for internal subnets and explicit Outbound NAT mappings, DMZ servers lose internet egress and return paths fail.
