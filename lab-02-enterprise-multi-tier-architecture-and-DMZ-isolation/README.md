@@ -67,12 +67,11 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ![DMZ Firewall Policy & Forward Filter Hierarchy](assets/04-dmz-firewall-ruleset.png)
 
-* **Objective:** Construct the `DMZ_ISOLATION` IPv4 firewall ruleset to enforce zero-trust isolation against internal networks, and attach it as a forward filter on the DMZ ingress interface.
-* **Key Implementation Details:**
-  * **Stateful Flow Tracking (Rule 10):** Configured `action accept` for `established` and `related` connection states to ensure internal administrative connections receive return traffic.
-  * **Internal Subnet Drops (Rules 20 & 30):** Configured explicit `action drop` rules for traffic destined to Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`) subnets.
-  * **Default Policy & Egress Flow:** Maintained `default-action accept` to permit DMZ workloads outbound internet access.
-  * **Forward Filter Jump (Rule 10):** Bound inbound interface `eth1` to jump directly into the `DMZ_ISOLATION` inspection chain upon ingress.
-
+* **Objective:** Construct a stateful, zero-trust boundary firewall policy (`DMZ_ISOLATION`) on `DMZ-VyOS` to guarantee that compromised DMZ hosts cannot pivot into internal subnets, while allowing internal management access and outbound internet egress.
+* **Key Implementation Details & Rationale:**
+  * **Stateful Flow Preservation (Rule 10):** Permitted connection states `established` and `related`. This allows inbound management sessions (such as SSH from VLAN 10) to receive return packets without requiring dangerous, open back-door rules from the DMZ back toward internal networks.
+  * **Strict Internal Subnet Isolation (Rules 20 & 30):** Configured explicit `action drop` rules targeting destination subnets `192.168.10.0/24` (Management) and `192.168.20.0/24` (Application). Even if an attacker gains root-level remote code execution on the public DMZ server, any packet initiated toward internal enterprise networks is dropped immediately at the L3 boundary interface.
+  * **Default Action & Internet Egress Rationale:** Set `default-action accept` on the `DMZ_ISOLATION` chain. Because Rules 20 and 30 explicitly block internal destinations, all remaining unmatched traffic (e.g., outbound internet update traffic destined for `0.0.0.0/0`) is permitted to flow out through pfSense WAN NAT.
+  * **Forward Filter Mapping (`eth1` Ingress):** Configured `forward filter rule 10` to bind directly to `inbound-interface eth1` with `action jump` targeting `DMZ_ISOLATION`. Filtering packets at the exact point of ingress prevents unauthorized frames from ever reaching the VyOS routing engine or transit links.
+ 
 ---
-
