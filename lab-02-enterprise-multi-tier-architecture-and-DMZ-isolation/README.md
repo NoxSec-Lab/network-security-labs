@@ -37,45 +37,42 @@ This lab expands our enterprise network architecture into a production-grade 3-t
     * **DMZ Public Host:** `DMZ-Public-Server` (`172.16.30.10/24`).
 
 ---
-## DMZ Core Routing & Boundary Firewall Configuration
+## DMZ Routing & Boundary Firewall Enforcement
 
-### DMZ VyOS Interface & Static Gateway Configuration
+### DMZ Router Interface & Gateway Provisioning
 
-![DMZ-VyOS CLI Configuration](assets/02-dmz-vyos-base-config.png)
+![DMZ Router Initial Configuration](assets/02-dmz-vyos-base-config.png)
 
-* **Objective:** Provision the `DMZ-VyOS` router with Layer 3 interfaces for transit and host connectivity, establish default static routing to pfSense, and construct the `DMZ_ISOLATION` firewall policy.
+* **Objective:** Assign Layer 3 addressing across transit and local DMZ interfaces on `DMZ-VyOS` and configure default outbound routing toward the pfSense edge firewall.
 * **Key Implementation Details:**
-  * **Transit Interface (`eth0`):** Configured with IP `10.0.1.2/24` facing pfSense interface `e3` (`10.0.1.1`).
-  * **DMZ Host Interface (`eth1`):** Configured with IP `172.16.30.1/24` to act as the default gateway for DMZ workloads.
-  * **Default Outbound Route:** Set static default route (`0.0.0.0/0`) pointing to next-hop `10.0.1.1` (pfSense DMZ transit interface).
-  * **Stateful Firewall Construction (`DMZ_ISOLATION`):**
-    * **Default Policy:** Set `default-action accept` to permit outbound internet access for DMZ hosts.
-    * **Rule 10 (Stateful Processing):** Permitted `established` and `related` connection states to allow return traffic for internal connections initiated into the DMZ.
-    * **Rule 20 & 30 (Internal Isolation):** Explicitly dropped all traffic destined for Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`) subnets.
-    * **Forward Filter Association:** Bound the `DMZ_ISOLATION` ruleset to jump on all inbound traffic traversing interface `eth1`.
+  * **Transit Interface (`eth0`):** Assigned IP `10.0.1.2/24` with description `TRANSIT-TO-PFSENSE-E3` to establish the upstream interconnection.
+  * **DMZ Host Interface (`eth1`):** Assigned IP `172.16.30.1/24` with description `DMZ-HOST-SEGMENT` to act as the default gateway for public-facing servers.
+  * **Default Gateway:** Applied static default route (`0.0.0.0/0`) pointing to next-hop `10.0.1.1` (pfSense DMZ interface `e3`).
 
 ---
 
-### DMZ Router Interface Verification
+### DMZ Router Interface State Verification
 
-![DMZ-VyOS Interface Status Verification](assets/03-dmz-vyos-interfaces-show.png)
+![DMZ Router Interface Summary](assets/03-dmz-vyos-interfaces-show.png)
 
-* **Objective:** Confirm operational status, IP addressing, and link state across all interfaces on the `DMZ-VyOS` router.
+* **Objective:** Verify operational link status (`u/u`), IP address bindings, and descriptions across all physical and logical interfaces on `DMZ-VyOS`.
 * **Key Implementation Details:**
-  * **`eth0` (Transit Link):** Operational state `u/u` (Up/Up) with `10.0.1.2/24` assigned and standard **1500 MTU**.
-  * **`eth1` (DMZ Segment):** Operational state `u/u` (Up/Up) with `172.16.30.1/24` assigned and standard **1500 MTU**.
-  * **Unused Adapters:** Interfaces `eth2` through `eth9` remain in `u/D` (Admin Up / Link Down) state without assigned Layer 3 parameters.
+  * **Transit Link (`eth0`):** Confirmed active state (`u/u`) with `10.0.1.2/24` bound and standard **1500 MTU**.
+  * **DMZ Host Link (`eth1`):** Confirmed active state (`u/u`) with `172.16.30.1/24` bound and standard **1500 MTU**.
+  * **Inactive Interfaces:** Verified interfaces `eth2` through `eth9` remain unconfigured in link-down state (`u/D`).
 
 ---
 
-### Boundary Firewall Policy Verification
+### Boundary Firewall Ruleset Construction & Forward Filter Binding
 
-![DMZ-VyOS Firewall Configuration](assets/04-dmz-firewall-ruleset.png)
+![DMZ Firewall Policy & Forward Filter Hierarchy](assets/04-dmz-firewall-ruleset.png)
 
-* **Objective:** Confirm the active commit status and rule structure of the `DMZ_ISOLATION` firewall policy on `DMZ-VyOS`.
+* **Objective:** Construct the `DMZ_ISOLATION` IPv4 firewall ruleset to enforce zero-trust isolation against internal networks, and attach it as a forward filter on the DMZ ingress interface.
 * **Key Implementation Details:**
-  * **Forward Filter Assignment:** Verified that `forward filter rule 10` intercepts inbound traffic on `eth1` and redirects it to the `DMZ_ISOLATION` jump target.
-  * **Stateful Flow Preservation (Rule 10):** Validated stateful tracking for `established` and `related` flows to ensure internal administration sessions receive return packets.
-  * **Internal Network Isolation (Rules 20 & 30):** Confirmed explicit `drop` actions for all egress attempts directed toward Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`) subnets.
+  * **Stateful Flow Tracking (Rule 10):** Configured `action accept` for `established` and `related` connection states to ensure internal administrative connections receive return traffic.
+  * **Internal Subnet Drops (Rules 20 & 30):** Configured explicit `action drop` rules for traffic destined to Management (`192.168.10.0/24`) and Application (`192.168.20.0/24`) subnets.
+  * **Default Policy & Egress Flow:** Maintained `default-action accept` to permit DMZ workloads outbound internet access.
+  * **Forward Filter Jump (Rule 10):** Bound inbound interface `eth1` to jump directly into the `DMZ_ISOLATION` inspection chain upon ingress.
 
 ---
+
