@@ -216,3 +216,38 @@ This lab expands our enterprise network architecture into a production-grade 3-t
   * **Transit Router Gateway Verification (`10.0.1.2`):** Achieved 0% packet loss (average RTT ~9.1 ms), proving that `DMZ-VyOS` correctly routes packets internally across its interfaces (`eth1` to `eth0`).
   * **Edge Firewall Verification (`10.0.1.1`):** Achieved 0% packet loss (average RTT ~30.4 ms with TTL drop to 63), confirming that the pfSense `OPT1` ingress rule successfully permits source traffic from `172.16.30.0/24`.
   * **Public Internet Egress Verification (`8.8.8.8`):** Achieved 0% packet loss (average RTT ~36.8 ms), conclusively proving that pfSense’s Outbound NAT rule translates `172.16.30.10` to the WAN address and completes full-path external routing.
+
+---
+
+## Security Policy Enforcement & Isolation Verification
+
+### DMZ Outbound Isolation Enforcement (Ping Timeout Tests)
+
+![DMZ Server Outbound Ping Timeout to Internal Subnets](assets/18_DMZ_Server_Isolation_Ping_Timeout.png)
+
+* **Objective:** Test policy enforcement on `DMZ-Public-Server` by initiating ICMP echo requests toward internal enterprise networks: Management (`192.168.10.1`) and Application (`192.168.20.1`).
+* **Why We Verified It Here:**
+  * **Zero-Trust Boundary Validation:** Both ping attempts resulted in `100% packet loss` (`3 packets transmitted, 0 received`). This confirms that DMZ hosts cannot initiate lateral movement into internal corporate zones.
+  * **Validating Drop Actions:** This test proves that rules 20 and 30 on the `DMZ_ISOLATION` firewall chain are actively evaluating traffic coming in on `eth1` and dropping packets directed toward private enterprise subnets.
+
+---
+
+### Packet Capture Inspection on Boundary Router (`tcpdump`)
+
+![VyOS Interface Packet Capture Dropped Packets](assets/19_DMZ_VyOS_tcpdump_Dropped_Packets.png)
+
+* **Objective:** Execute `sudo tcpdump -i eth1 icmp -n -v` on `DMZ-VyOS` to monitor real-time ICMP traffic arriving from the DMZ server.
+* **Why We Verified It Here:**
+  * **Ingress Ingestion Evidence:** The packet capture shows `172.16.30.10` sending ICMP echo requests targeting `192.168.10.1` and `192.168.20.1` on `eth1`.
+  * **Policy Enforcement Proof:** While `tcpdump` captures the packets arriving at `eth1`, no corresponding egress echo requests or reply packets exit toward the internal networks or pfSense. This confirms that the firewall engine intercepts and silently drops these frames before L3 forwarding occurs.
+
+---
+
+### Inbound Management Access & Port Audit (`nc` / SSH)
+
+![Management Server Inbound Service Access Test](assets/20_Inbound_Service_Access_Test.png)
+
+* **Objective:** Initiate ICMP reachability and TCP port checks (`nc -zv`) from an internal management host (`ubuntu-mgmt-svr01`) targeting `DMZ-Public-Server` (`172.16.30.10`) on port 22 (SSH).
+* **Why We Verified It Here:**
+  * **Stateful Flow Inspection Validation:** `ping` succeeds with 0% packet loss, and `nc -zv 172.16.30.10 22` returns `Connection to 172.16.30.10 22 port [tcp/ssh] succeeded!`.
+  * **Stateful Firewall Symmetry:** This validates rule 10 (`state established, related`) on the DMZ firewall policy. Inbound management sessions initiated from trusted internal networks are allowed in, and the server's return traffic is permitted out without exposing internal networks to uninitiated DMZ traffic.
