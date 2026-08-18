@@ -77,7 +77,7 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 ---
 ### Edge Gateway & Transit Interface Setup (pfSense via TigerVNC Console)
 
-![pfSense Interface Mapping & Network Overview](assets/05-pfsense-interfaces.png)
+![pfSense Interface Mapping & Network Overview](assets/05-pfsense-dmz-interface-config.png)
 
 * **Objective:** Establish physical-to-logical interface bindings on the pfSense firewall and assign static transit addressing to tie the upstream network segments together.
 * **Why We Configured It This Way:**
@@ -88,7 +88,7 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ### End-to-End Transit Connectivity Verification
 
-![ICMP Verification from pfSense to DMZ-VyOS](assets/06-pfsense-ping-dmz.png)
+![ICMP Verification from pfSense to DMZ-VyOS](assets/06-pfsense-to-dmz-vyos-ping.png)
 
 * **Objective:** Verify basic Layer 3 reachability across the dedicated transit link from pfSense (`10.0.1.1`) to the `DMZ-VyOS` router interface (`10.0.1.2`).
 * **Why We Verified It Here:**
