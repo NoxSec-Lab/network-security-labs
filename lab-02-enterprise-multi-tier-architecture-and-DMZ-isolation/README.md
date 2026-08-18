@@ -24,7 +24,7 @@ This lab expands our enterprise network architecture into a production-grade 3-t
 
 ## Network Architecture & Topology
 
-![Lab Topology](network-security-labs/lab-02-enterprise-multi-tier-architecture-and-DMZ-isolation/assets/01-gns3-topology.png)
+![Lab Topology](assets/01-gns3-topology.png)
 
 * **Objective:** Design and validate a secure 3-tier enterprise architecture that completely isolates public-facing DMZ servers from internal administrative and application segments.
 * **Architecture Breakdown:**
